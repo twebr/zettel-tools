@@ -56,6 +56,27 @@ optional arguments:
 
 ```
 
+Sample output:
+
+```
+The following IDs have a wrong format:
+- 20201016123, for the file data/small-testset/subfolder1/20201016123 abiogenetic nutlet.md
+- 4definitey, for the file data/small-testset/4definitey abkhazian opcw.txt
+--------------------------------------------------------------------------------
+The following IDs are not unique:
+- 202001011234, for the files: 
+    - data/small-testset/202001011234 abducent common racoon.md
+    - data/small-testset/subfolder1/202010161231 aberrant suspiciousness.md
+- 202010161231, for the files: 
+    - data/small-testset/subfolder1/20201016123 abiogenetic nutlet.md
+    - data/small-testset/subfolder1/202010161231 aberrant xeranthemum annuum.md
+--------------------------------------------------------------------------------
+Broken links:
+- 123456789012, in the file data/small-testset/202001011235 abducent port moresby.md
+- 123456789012, in the file data/small-testset/202001011235 abducent port moresby.md
+--------------------------------------------------------------------------------
+```
+
 ## Known limitations
 
 - `add_zettel_ids.py`: While you can supply your own format code for generating Zettel IDs, the system for resolving duplicate IDs always increments the ID with 1 minute. If you choose a higher granularity (e.g. seconds), this may create larger gaps in Zettel IDs than strictly needed. If you choose a lower granularity (e.g. hours), the script may slow down because it will do many redundant checks.
