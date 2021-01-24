@@ -128,5 +128,4 @@ dmypy.json
 .idea
 
 # datasets
-small-testset
-stresstest-md
+data/

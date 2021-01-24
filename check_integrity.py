@@ -1,45 +1,16 @@
 """
+Checks integrity of a zettelkasten library at the specified path.
+To see documentation, run `$ python check_integrity.py --help`
+
 Loosely based on https://github.com/crelder/zettelkasten
 """
 
 import argparse
 import re
 from pathlib import Path
-from typing import List, Tuple, Generator
-from collections import defaultdict
+from typing import List, Tuple
 
-
-def list_duplicates(seq: List) -> Generator[Tuple, None, None]:
-    """Helper function to list duplicates.
-
-    See https://stackoverflow.com/a/5419576
-    """
-
-    tally = defaultdict(list)
-    for idx, item in enumerate(seq):
-        tally[item].append(idx)
-    return ((key, locs) for key, locs in tally.items()
-            if len(locs) > 1)
-
-
-def get_note_paths(directory: str, extensions: List[str]) -> List[Path]:
-    """Returns a list of all paths to notes in the given directory.
-    Filters out results based on extension."""
-
-    patterns = ['*.{}'.format(ext) for ext in extensions]
-    note_paths = []
-    for pattern in patterns:
-        note_paths += Path(directory).rglob(pattern)
-    return note_paths
-
-
-def get_id_from_path(path: Path, separator: str = ' ') -> str:
-    """Returns the zettel ID for a note path.
-
-    This method assumes that IDs and note names are separated by a space.
-    Optionally you can define a different separator"""
-
-    return path.stem.split(separator)[0]
+from util import list_duplicates, get_note_paths, get_id_from_path
 
 
 def get_ids_with_incorrect_format(note_paths: List[Path], id_pattern: str) -> List[Tuple[str, Path]]:
@@ -95,7 +66,7 @@ def main():
     parser.add_argument('--id-pattern', type=str, default=r'(\d{12})', metavar='regex',
                         help='regex to identify a zettel ID (default: (\\d{12}))')
     parser.add_argument('--extensions', type=str, nargs='+', default=['md', 'txt'], metavar='ext',
-                        help='Extensions to check (default: md, txt)')
+                        help='extensions to check (default: md, txt)')
     args = parser.parse_args()
 
     # Get note filenames
