@@ -60,11 +60,11 @@ def get_broken_links(note_paths: List[Path], id_pattern: str) -> List[Tuple[str,
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Check integrity of a zettelkasten library')
+    parser = argparse.ArgumentParser(description='Check integrity of a Zettelkasten library')
     parser.add_argument('directory', type=Path, metavar='path',
                         help='directory of the zettelkasten library')
     parser.add_argument('--id-pattern', type=str, default=r'(\d{12})', metavar='regex',
-                        help='regex to identify a zettel ID (default: (\\d{12}))')
+                        help='regex to identify a zettel ID (default: %(default)s)')
     parser.add_argument('--extensions', type=str, nargs='+', default=['md', 'txt'], metavar='ext',
                         help='extensions to check (default: md, txt)')
     args = parser.parse_args()
