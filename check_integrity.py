@@ -32,7 +32,7 @@ def get_duplicate_ids(note_paths: List[Path], id_pattern: str) -> List[Tuple[str
     occurs more than once
     """
 
-    ids = [get_id_from_path(path) for path in note_paths if re.match(id_pattern, get_id_from_path(path))]
+    ids = [get_id_from_path(path) for path in note_paths]
 
     duplicates = []
     for zettel_id, locs in sorted(list_duplicates(ids)):
@@ -47,13 +47,15 @@ def get_broken_links(note_paths: List[Path], id_pattern: str) -> List[Tuple[str,
     """
 
     ids = [get_id_from_path(path) for path in note_paths]
-    pattern = re.compile(r"\[{2}" + id_pattern + r"[^]\n]*]{2}")
+
+    # group(1) is everything between the [[brackets]]
+    # group(2) is the zettel ID only
+    pattern = re.compile(r"\[{2}(" + id_pattern + r"[^]\n]*)]{2}")
     broken_links = []
 
     for path in note_paths:
         for match in pattern.finditer(path.read_text()):
-            # print('Found {}'.format(match.group(1)))
-            if match.group(1) not in ids:
+            if match.group(2) not in ids:
                 broken_links.append((match.group(1), path))
 
     return broken_links
