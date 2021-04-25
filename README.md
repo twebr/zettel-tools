@@ -4,6 +4,57 @@ A collection of Python scripts to manage a Zettelkasten library.
 
 Tested with Python 3.9 on macOS 10.14.
 
+
+## `add_tags_to_file.py`
+
+Adds tags to the top of a note with the following formatting:
+
+```
+---
+tags: [tag1, tag2]
+---
+
+rest of the file
+```
+
+Documentation:
+```
+usage: add_tags_to_file.py [-h] [--tags ext [ext ...]] [--extensions ext [ext ...]] path
+
+Add tags to file
+
+positional arguments:
+  path                  directory of the zettelkasten library
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --tags ext [ext ...]  tags to add
+  --extensions ext [ext ...]
+                        extensions to check (default: md, txt)
+
+```
+
+
+## `add_title_to_file.py`
+
+Adds title (based on filename) to the start of the note. Documentation:
+
+```
+usage: add_title_to_file.py [-h] [--extensions ext [ext ...]] path
+
+Add markdown title to file based on filename
+
+positional arguments:
+  path                  directory of the zettelkasten library
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --extensions ext [ext ...]
+                        extensions to check (default: md, txt)
+
+```
+
+
 ## `add_zettel_ids.py`
 
 Create Zettel IDs for a Zettelkasten library at the specified location. You can specify your own format code for generating the IDs, based on the file creation date. The script prevents the generation of duplicate IDs, and also checks if notes already have a valid ID (if so, these notes are skipped).
@@ -28,6 +79,7 @@ optional arguments:
   --dry-run             do a dry run, without actually renaming files
 
 ```
+
 
 ## `check_integrity.py`
 
@@ -76,6 +128,29 @@ Broken links:
 - 123456789012, in the file data/small-testset/202001011235 abducent port moresby.md
 --------------------------------------------------------------------------------
 ```
+
+
+## `stupefy_typography.py`
+
+Reverses the smart typography applied by tools such as SmartyPants or smart quotes in MS Word. Documentation:
+
+```
+usage: stupefy_typography.py [-h] [--extensions ext [ext ...]] [--dry-run] path
+
+Reverses the smart typography applied by tools such as SmartyPants or smart quotes in MS Word. TAKE CARE! The transformation is done in-place. This script reads the files and converts the
+following: - curly quotes to straight quotes - em dashes to --- - en dashes to -- - ellipsis to ... To see documentation, run `$ python stupefy_typography.py --help`
+
+positional arguments:
+  path                  directory of the zettelkasten library
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --extensions ext [ext ...]
+                        extensions to check (default: md, txt)
+  --dry-run             Perform a dry run without changing files on disk
+
+```
+
 
 ## Known limitations
 
