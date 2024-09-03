@@ -1,6 +1,7 @@
+import re
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Generator, Tuple
+from typing import List, Generator, Tuple, Union
 
 
 def list_duplicates(seq: List) -> Generator[Tuple, None, None]:
@@ -64,3 +65,16 @@ def remove_hidden_files(paths: List[Path]):
     for path in list(paths):
         if any([part.startswith(".") for part in path.parts]):
             paths.remove(path)
+
+
+def has_zettel_id(path: Path, id_pattern) -> Union[str, bool]:
+    """Checks if a note already has a zettel ID.
+
+    :return zettel ID if present; False otherwise
+    """
+
+    pattern = re.compile(id_pattern)
+    match = pattern.match(get_id_from_path(path))
+    if match is not None:
+        return match.group()
+    return False

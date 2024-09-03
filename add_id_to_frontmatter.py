@@ -1,5 +1,5 @@
 """
-Adds a zettel ID from the filename to the YAML frontmatter of the note.
+Adds a zettel ID from the filename to a specified property in the YAML frontmatter of the note.
 """
 
 import argparse
@@ -7,58 +7,63 @@ from pathlib import Path
 
 import frontmatter
 
-from util import get_note_paths, get_id_from_path
+from util import get_note_paths, has_zettel_id
 
 
-def get_id_from_filename(path: Path) -> str:
-    """Gets ID from filenname. Returns False if none found."""
-
-    zettel_id = get_id_from_path(path)
-    return zettel_id
-
-
-def add_id_to_frontmatter(path: Path, zettel_id: str) -> frontmatter.Post:
-    """Adds specified zettel ID to the existing frontmatter of a note."""
-
+def add_id_to_frontmatter(path: Path, property_name: str, zettel_id: str) -> frontmatter.Post:
+    """Adds specified zettel ID to the existing frontmatter of a note.
+    :param path: Path to the note.
+    :param property_name: Name of the frontmatter property to write the zettel ID to.
+    :param zettel_id: ID of the zettel that should be added to the frontmatter.
+    :return: Frontmatter post object to which the zettel ID is added.
+    """
     post = frontmatter.load(path)
-    post['id'] = zettel_id
+    post[property_name] = zettel_id
 
     return post
-
-    # print("Adding {} to file {}".format(lines, path))
-    # line_prepender(path, lines)
 
 
 def main():
     parser = argparse.ArgumentParser(description='Add zettel ID from the filename to the YAML frontmatter')
     parser.add_argument('input_directory', type=Path, metavar='path',
                         help='directory of the zettelkasten library')
-    # parser.add_argument('output_directory', type=Path, metavar='path',
-    #                     help='directory to write the result to')
-    # parser.add_argument('--tags', type=str, nargs='+', metavar='ext',
-    #                     help='tags to add')
+    parser.add_argument('--id-pattern', type=str, default=r'(\d{12})', metavar='regex',
+                        help='regex to identify a zettel ID (default: %(default)s)')
+    parser.add_argument('--property-name', type=str, default='note_id',
+                        help='Name of the frontmatter property to write the note ID to')
     parser.add_argument('--extensions', type=str, nargs='+', default=['md', 'txt'], metavar='ext',
                         help='extensions to check (default: md, txt)')
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Perform a dry run without changing files on disk")
     args = parser.parse_args()
+
+    if args.dry_run:
+        print("Running in dry mode.\n")
 
     # Get note filenames
     note_paths = get_note_paths(args.input_directory, args.extensions)
 
-    counter = 0
+    success_counter = 0
+    skip_counter = 0
     for path in note_paths:
-        zettel_id = get_id_from_filename(path)
-        post = add_id_to_frontmatter(path, zettel_id)
+        if zettel_id := has_zettel_id(path, args.id_pattern):
+            post = add_id_to_frontmatter(path, args.property_name, zettel_id)
 
-        frontmatter.dump(post, path)
-        # with path.open(mode='w') as f:
-        #     frontmatter.dump(post, f)
+            if not args.dry_run:
+                # Write the modified file to disk (this overwrites the original file)
+                frontmatter.dump(post, path)
+            print(f"Added zettel ID '{zettel_id}' to '{path}'")
+            success_counter += 1
+        else:
+            print(f"No zettel ID found for '{path}'")
+            skip_counter += 1
 
-        counter += 1
-
-    if counter == 0:
+    if success_counter == 0:
         print("No files to modify")
     else:
-        print("Added tags to {} files.".format(counter))
+        print(f"\nAdded zettel IDs to the property '{args.property_name}' in {success_counter} files.")
+        print(f"Skipped {skip_counter} files.")
+        print(f"Processed {success_counter + skip_counter} files in total.")
 
 
 if __name__ == '__main__':

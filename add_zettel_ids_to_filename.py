@@ -6,25 +6,11 @@ To see documentation, run `$ python add_zettel_ids.py --help`
 """
 
 import argparse
-import re
 from pathlib import Path
-from typing import Union, Optional
+from typing import Optional
 import datetime
 
-from util import get_note_paths, get_id_from_path
-
-
-def has_zettel_id(path: Path, id_pattern) -> Union[str, bool]:
-    """Checks if a note already has a zettel ID.
-
-    :return zettel ID if present; False otherwise
-    """
-
-    pattern = re.compile(id_pattern)
-    match = pattern.match(get_id_from_path(path))
-    if match is not None:
-        return match.group()
-    return False
+from util import get_note_paths, has_zettel_id
 
 
 def generate_zettel_id(path: Path, used_ids: set, id_pattern, id_format) -> Optional[str]:
@@ -57,7 +43,7 @@ def generate_zettel_id(path: Path, used_ids: set, id_pattern, id_format) -> Opti
 
 
 def add_id_to_note(path, zettel_id, dry_run=False):
-    """Adds a zettel ID to a note.
+    """Adds a zettel ID to a note filename.
 
     :param path: path to the note to which the zettel ID should be added
     :param zettel_id: the zettel ID to add to the note
