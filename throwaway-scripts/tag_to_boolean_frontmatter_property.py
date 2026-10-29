@@ -276,10 +276,6 @@ def process_vault(
                       else f"{relative}: {action}")
 
                 if not dry_run:
-                    backup = path.with_suffix(path.suffix + ".bak")
-                    if not backup.exists():
-                        shutil.copy2(path, backup)
-
                     encoded = new_text.encode("utf-8")
                     if has_bom:
                         encoded = b"\xef\xbb\xbf" + encoded
