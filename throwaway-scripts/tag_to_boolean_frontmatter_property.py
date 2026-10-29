@@ -169,6 +169,7 @@ def transform_note(
     yaml: YAML,
     tag: str,
     path: Path,
+    legacy_status: bool = False,
 ) -> tuple[str, bool, bool]:
     """Set the tag-named property to true or false on every note."""
     frontmatter, body = split_frontmatter(text)
@@ -197,7 +198,15 @@ def transform_note(
     )
 
     new_body, body_has_tag = remove_body_tags(body, tag)
-    tag_present = frontmatter_has_tag or body_has_tag
+    legacy_match = (
+            legacy_status
+            and re.search(
+        r"(?im)^[ \t]*Status::[ \t]*watched[ \t]*$",
+        body,
+    ) is not None
+    )
+
+    tag_present = frontmatter_has_tag or body_has_tag or legacy_match
 
     # Warn if the property already exists, even if its value is unchanged.
     if has_frontmatter and tag in metadata:
@@ -229,7 +238,9 @@ def transform_note(
     return result, result != text, tag_present
 
 
-def process_vault(vault: Path, tag: str, dry_run: bool) -> int:
+def process_vault(
+    vault: Path, tag: str, dry_run: bool, legacy_status: bool = False
+) -> int:
     yaml = YAML()
     yaml.preserve_quotes = True
     yaml.allow_unicode = True
@@ -254,7 +265,7 @@ def process_vault(vault: Path, tag: str, dry_run: bool) -> int:
             text = original.decode("utf-8-sig" if has_bom else "utf-8")
 
             new_text, changed, tag_present = transform_note(
-                text, yaml, tag, path
+                text, yaml, tag, path, legacy_status
             )
 
             value = "true" if tag_present else "false"
@@ -326,6 +337,11 @@ def main() -> int:
         action="store_true",
         help="Apply changes (default: dry run)",
     )
+    parser.add_argument(
+        "--legacy-status",
+        action="store_true",
+        help="Also treat 'Status:: watched' as a match for the tag.",
+    )
 
     args = parser.parse_args()
 
@@ -340,7 +356,12 @@ def main() -> int:
     if not vault.is_dir():
         parser.error(f"Vault directory does not exist: {vault}")
 
-    return process_vault(vault, args.tag, dry_run=not args.write)
+    return process_vault(
+        vault,
+        args.tag,
+        dry_run=not args.write,
+        legacy_status=args.legacy_status,
+    )
 
 
 if __name__ == "__main__":
