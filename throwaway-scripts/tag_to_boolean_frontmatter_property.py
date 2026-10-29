@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# requires-python = ">=3.12"
+# requires-python = ">=3.10"
 # dependencies = [
 #   "ruamel.yaml>=0.18,<1",
 # ]
@@ -68,9 +68,7 @@ def remove_inline_code(line: str) -> str:
 
 
 def tag_pattern(tag: str) -> re.Pattern[str]:
-    return re.compile(
-        rf"(?<![\w/#-])#{re.escape(tag)}(?![\w/-])"
-    )
+    return re.compile(rf"(?<![\w/#-])#{re.escape(tag)}(?![\w/-])")
 
 
 def remove_body_tags(body: str, tag: str) -> tuple[str, bool]:
@@ -171,7 +169,7 @@ def transform_note(
     yaml: YAML,
     tag: str,
     path: Path,
-) -> tuple[str, bool]:
+) -> tuple[str, bool, bool]:
     """Set the tag-named property to true or false on every note."""
     frontmatter, body = split_frontmatter(text)
     has_frontmatter = frontmatter is not None
@@ -210,12 +208,11 @@ def transform_note(
             stacklevel=2,
         )
 
-    # Preserve the previous behavior of removing the source tag.
+    # Remove the tag from YAML tags and the Markdown body.
     if has_frontmatter:
         remove_frontmatter_tag(metadata, tag)
 
-    # The tag name itself becomes the boolean property name.
-    metadata[tag] = bool(tag_present)
+    metadata[tag] = tag_present
 
     buffer = io.StringIO()
     yaml.dump(metadata, buffer)
@@ -229,8 +226,7 @@ def transform_note(
         + new_body
     )
 
-    # Every note is processed, but only report/write actual content changes.
-    return result, result != text
+    return result, result != text, tag_present
 
 
 def process_vault(vault: Path, tag: str, dry_run: bool) -> int:
@@ -239,6 +235,7 @@ def process_vault(vault: Path, tag: str, dry_run: bool) -> int:
     yaml.allow_unicode = True
 
     updated = 0
+    unchanged = 0
     errors = 0
 
     for path in sorted(vault.rglob("*.md")):
@@ -256,48 +253,57 @@ def process_vault(vault: Path, tag: str, dry_run: bool) -> int:
             has_bom = original.startswith(b"\xef\xbb\xbf")
             text = original.decode("utf-8-sig" if has_bom else "utf-8")
 
-            new_text, changed = transform_note(text, yaml, tag, path)
+            new_text, changed, tag_present = transform_note(
+                text, yaml, tag, path
+            )
 
-            if not changed:
-                continue
+            value = "true" if tag_present else "false"
+            action = f"set {tag}: {value}"
 
-            prefix = "[DRY RUN] " if dry_run else ""
-            print(f"{prefix}Updating: {relative}")
+            if changed:
+                print(f"{relative}: would {action}" if dry_run
+                      else f"{relative}: {action}")
 
-            if not dry_run:
-                backup = path.with_suffix(path.suffix + ".bak")
-                if not backup.exists():
-                    shutil.copy2(path, backup)
+                if not dry_run:
+                    backup = path.with_suffix(path.suffix + ".bak")
+                    if not backup.exists():
+                        shutil.copy2(path, backup)
 
-                encoded = new_text.encode("utf-8")
-                if has_bom:
-                    encoded = b"\xef\xbb\xbf" + encoded
+                    encoded = new_text.encode("utf-8")
+                    if has_bom:
+                        encoded = b"\xef\xbb\xbf" + encoded
 
-                temp_path = None
-                try:
-                    with tempfile.NamedTemporaryFile(
-                        dir=path.parent,
-                        prefix=f".{path.name}.",
-                        suffix=".tmp",
-                        delete=False,
-                    ) as temp:
-                        temp_path = Path(temp.name)
-                        temp.write(encoded)
+                    temp_path = None
+                    try:
+                        with tempfile.NamedTemporaryFile(
+                            dir=path.parent,
+                            prefix=f".{path.name}.",
+                            suffix=".tmp",
+                            delete=False,
+                        ) as temp:
+                            temp_path = Path(temp.name)
+                            temp.write(encoded)
 
-                    shutil.copystat(path, temp_path)
-                    temp_path.replace(path)
-                finally:
-                    if temp_path is not None:
-                        temp_path.unlink(missing_ok=True)
+                        shutil.copystat(path, temp_path)
+                        temp_path.replace(path)
+                    finally:
+                        if temp_path is not None:
+                            temp_path.unlink(missing_ok=True)
 
-            updated += 1
+                updated += 1
+            else:
+                print(f"{relative}: no changes needed")
+                unchanged += 1
 
         except (OSError, UnicodeError, ValueError, YAMLError) as exc:
             print(f"ERROR: {path}: {exc}", file=sys.stderr)
             errors += 1
 
     action = "would be updated" if dry_run else "updated"
-    print(f"\nDone: {updated} note(s) {action}; {errors} error(s).")
+    print(
+        f"\nDone: {updated} note(s) {action}, "
+        f"{unchanged} unchanged, {errors} error(s)."
+    )
     return 1 if errors else 0
 
 
